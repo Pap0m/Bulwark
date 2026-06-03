@@ -12,58 +12,72 @@ pub fn ev_handler(conn: ?*c.mg_connection, ev: c_int, ev_data: ?*anyopaque) call
     if (ev == c.MG_EV_HTTP_MSG) { // new http request received
         const hm: *c.mg_http_message = @ptrCast(@alignCast(ev_data));
 
-        if (c.mg_match(hm.uri, c.mg_str("/#"), null)) {
-            const opts: c.mg_http_serve_opts = .{ .root_dir = "./public", .fs = &c.mg_fs_posix };
+        // if (c.mg_match(hm.uri, c.mg_str("/#"), null)) {
+        //     const opts: c.mg_http_serve_opts = .{ .root_dir = "./web/public", .fs = &c.mg_fs_posix };
+        //     c.mg_http_serve_dir(conn, hm, &opts);
+        // } else {
+        //     c.mg_http_reply(conn, 404, "", "%s", "Not Found\n");
+        // }
+        // // routes that needs authentication
+        // if (c.mg_match(hm.uri, c.mg_str("/api/#"), null)) {
+        //     const auth_header = c.mg_http_get_header(hm, "Authorization") orelse {
+        //         c.mg_http_reply(conn, 401, "Content-Type: application/json\r\n", "{\"error\": \"Unauthorized\"}\n");
+        //         return;
+        //     };
+        //
+        //     _ = auth_header;
+        // }
+
+        // static assets
+        if (c.mg_match(hm.uri, c.mg_str("/assets/#"), null) or c.mg_match(hm.uri, c.mg_str("/thirdparty/#"), null)) {
+            const opts: c.mg_http_serve_opts = .{ .root_dir = "web/public", .fs = &c.mg_fs_posix };
             c.mg_http_serve_dir(conn, hm, &opts);
-        } else {
-            c.mg_http_reply(conn, 404, "", "%s", "Not Found\n");
-        }
-        // routes that needs authentication
-        if (c.mg_match(hm.uri, c.mg_str("/api/#"), null)) {
-            const auth_header = c.mg_http_get_header(hm, "Authorization") orelse {
-                c.mg_http_reply(conn, 401, "Content-Type: application/json\r\n", "{\"error\": \"Unauthorized\"}\n");
-                return;
-            };
-
-            _ = auth_header;
+            return;
         }
 
-        // auth routes
-        // GET login
+        // map routes to html files
+        // home
+        if (c.mg_match(hm.method, c.mg_str("GET"), null) and c.mg_match(hm.uri, c.mg_str("/"), null)) {
+            // const opts: c.mg_http_serve_opts = .{ .extra}
+            c.mg_http_serve_file(conn, hm, "web/index.html", null);
+            return;
+        }
+        // login
         if (c.mg_match(hm.method, c.mg_str("GET"), null) and c.mg_match(hm.uri, c.mg_str("/login"), null)) {
-            c.mg_http_reply(conn, 200, "Content-Type: application/json\r\n", "{\"route\": \"login\"}\n");
+            c.mg_http_serve_file(conn, hm, "web/login.html", null);
+            return;
         }
-        // POST login
-        if (c.mg_match(hm.method, c.mg_str("POST"), null) and c.mg_match(hm.uri, c.mg_str("/login"), null)) {
-            c.mg_http_reply(conn, 200, "Content-Type: application/json\r\n", "{\"route\": \"login\"}\n");
-        }
-
-        // GET register
+        // register
         if (c.mg_match(hm.method, c.mg_str("GET"), null) and c.mg_match(hm.uri, c.mg_str("/register"), null)) {
-            c.mg_http_reply(conn, 200, "Content-Type: application/json\r\n", "{\"route\": \"register\"}\n");
+            c.mg_http_serve_file(conn, hm, "web/register.html", null);
+            return;
         }
-        // POST register
-        if (c.mg_match(hm.method, c.mg_str("POST"), null) and c.mg_match(hm.uri, c.mg_str("/register"), null)) {
-            c.mg_http_reply(conn, 200, "Content-Type: application/json\r\n", "{\"route\": \"register\"}\n");
-        }
-
-        // vault items
-        // GET dashboard
+        // dashboard
         if (c.mg_match(hm.method, c.mg_str("GET"), null) and c.mg_match(hm.uri, c.mg_str("/dashboard"), null)) {
-            c.mg_http_reply(conn, 200, "Content-Type: application/json\r\n", "{\"route\": \"dashboard\"}\n");
+            c.mg_http_serve_file(conn, hm, "web/dashboard.html", null);
+            return;
         }
 
-        // GET items
+        // actions and htmx routing
+        // handle login
+        if (c.mg_match(hm.method, c.mg_str("POST"), null) and c.mg_match(hm.uri, c.mg_str("/login"), null)) {
+            return;
+        }
+        // handle register
+        if (c.mg_match(hm.method, c.mg_str("POST"), null) and c.mg_match(hm.uri, c.mg_str("/register"), null)) {
+            return;
+        }
+        // handle fetching vault items
         if (c.mg_match(hm.method, c.mg_str("GET"), null) and c.mg_match(hm.uri, c.mg_str("/items"), null)) {
-            c.mg_http_reply(conn, 200, "Content-Type: application/json\r\n", "{\"route\": \"items\"}\n");
+            return;
         }
-        // GET item form
+        // handle new vault item form
         if (c.mg_match(hm.method, c.mg_str("GET"), null) and c.mg_match(hm.uri, c.mg_str("/items/new"), null)) {
-            c.mg_http_reply(conn, 200, "Content-Type: application/json\r\n", "{\"route\": \"items/new\"}\n");
+            return;
         }
-        // POST new item
+        // handle adding a new valut item
         if (c.mg_match(hm.method, c.mg_str("POST"), null) and c.mg_match(hm.uri, c.mg_str("/items"), null)) {
-            c.mg_http_reply(conn, 200, "Content-Type: application/json\r\n", "{\"route\": \"items\"}\n");
+            return;
         }
 
         // show independent items
@@ -75,8 +89,12 @@ pub fn ev_handler(conn: ?*c.mg_connection, ev: c_int, ev_data: ?*anyopaque) call
         // session managment
         // POST logout
         if (c.mg_match(hm.method, c.mg_str("POST"), null) and c.mg_match(hm.uri, c.mg_str("/logout"), null)) {
-            c.mg_http_reply(conn, 200, "Content-Type: application/json\r\n", "{\"route\": \"logout\"}\n");
+            return;
         }
+
+        // fallback
+        // if no routes, send a 404
+        c.mg_http_reply(conn, 404, "", "404 Not Found\n");
     }
 }
 
