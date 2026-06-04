@@ -29,7 +29,9 @@ pub fn ev_handler(conn: ?*c.mg_connection, ev: c_int, ev_data: ?*anyopaque) call
         // }
 
         // static assets
-        if (c.mg_match(hm.uri, c.mg_str("/assets/#"), null) or c.mg_match(hm.uri, c.mg_str("/thirdparty/#"), null)) {
+        if (c.mg_match(hm.uri, c.mg_str("/assets/#"), null) or
+            c.mg_match(hm.uri, c.mg_str("/thirdparty/#"), null))
+        {
             const opts: c.mg_http_serve_opts = .{ .root_dir = "web/public", .fs = &c.mg_fs_posix };
             c.mg_http_serve_dir(conn, hm, &opts);
             return;
@@ -61,6 +63,28 @@ pub fn ev_handler(conn: ?*c.mg_connection, ev: c_int, ev_data: ?*anyopaque) call
         // actions and htmx routing
         // handle login
         if (c.mg_match(hm.method, c.mg_str("POST"), null) and c.mg_match(hm.uri, c.mg_str("/login"), null)) {
+            std.debug.print("Body: {s}\n", .{hm.body.buf[0..hm.body.len]});
+
+            var user_buf: [128]u8 = undefined;
+            var pass_buf: [128]u8 = undefined;
+
+            const user_len = c.mg_http_get_var(&hm.body, "username", &user_buf, user_buf.len);
+            const pass_len = c.mg_http_get_var(&hm.body, "password", &pass_buf, pass_buf.len);
+
+            if (user_len > 0 and pass_len > 0) {
+                const username = user_buf[0..@intCast(user_len)];
+                const password = pass_buf[0..@intCast(pass_len)];
+
+                std.debug.print("Username: {s}\n", .{username});
+                std.debug.print("Password: {s}\n", .{password});
+
+                // TODO: Validate credentials
+
+                c.mg_http_reply(conn, 200, "Content-Type: text/html\r\n", "<div>Login Successful!</div>");
+            } else {
+                c.mg_http_reply(conn, 400, "Content-Type: text/html\r\n", "<div>Login Unsuccessful!</div>");
+            }
+
             return;
         }
         // handle register

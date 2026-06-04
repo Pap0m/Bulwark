@@ -1,12 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="theme-dark">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login</title>
-    <!-- <link href="" rel="stylesheet"> -->
+    <link rel="stylesheet" href="/thirdparty/bulma.min.css">
+    <link rel="stylesheet" href="/thirdparty/all.min.css">
+    <script src="/thirdparty/htmx.min.js"></script>
   </head>
   <body>
-    <h1>Login</h1>  
+    <div class="is-flex is-justify-content-center is-align-items-center" style="height: 100%; min-height: 100vh;">
+      
+      <div class="column is-11-mobile is-6-tablet is-4-desktop is-3-widescreen">
+        
+        <div class="has-text-centered mb-5">
+          <img src="/assets/icon/logo.svg" alt="KyberKeep Black" class="image is-96x96 is-inline-block mb-3">
+          <h1 class="title is-3 has-text-white">Welcome Back to Bulwark</h1>
+        </div>
+
+        <form hx-post="/login">
+          <div class="field">
+            <p class="control has-icons-left has-icons-right">
+              <input type="text" name="username" placeholder="Username" class="input">
+              <span class="icon is-small is-left">
+                <i class="fas fa-envelope"></i>
+              </span>
+              <span class="icon is-small is-right">
+                <i class="fas fa-check"></i>
+              </span>
+            </p> 
+          </div>
+
+          <div class="field">
+            <p class="control has-icons-left has-icons-right">
+              <input type="password" name="password" placeholder="Password" class="input">
+              <span class="icon is-small is-left">
+                <i class="fas fa-lock"></i>
+              </span>
+              <span class="icon is-small is-right">
+                <i class="fas fa-check"></i>
+              </span>
+            </p> 
+          </div>
+
+          <div class="field mt-5">
+            <p class="control">
+              <button class="button is-success is-fullwidth" type="submit">
+                <strong>Login</strong>
+              </button>
+            </p> 
+          </div>
+        </form>
+
+        <div class="has-text-centered mt-4">
+          <p class="has-text-grey-light">
+            Not a member? 
+            <a href="/register" class="has-text-link">Register Account</a>
+          </p>
+        </div>
+
+      </div>
+    </div>
   </body>
 </html>
