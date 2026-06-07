@@ -8,6 +8,13 @@ const c = @cImport({
 
 const Bulwark = @import("Bulwark");
 
+const url = "http://0.0.0.0:8000";
+
+const App_Context = struct {
+    allocator: std.mem.Allocator,
+    db: ?*c.sqlite3,
+};
+
 pub fn ev_handler(conn: ?*c.mg_connection, ev: c_int, ev_data: ?*anyopaque) callconv(.c) void {
     if (ev == c.MG_EV_HTTP_MSG) { // new http request received
         const hm: *c.mg_http_message = @ptrCast(@alignCast(ev_data));
@@ -123,11 +130,24 @@ pub fn ev_handler(conn: ?*c.mg_connection, ev: c_int, ev_data: ?*anyopaque) call
 }
 
 pub fn main() !void {
-    var mgr: c.mg_mgr = .{};
+    // Init sqlite3 lib
+    var db: ?*c.sqlite3 = null;
+
+    if (c.sqlite3_open("Bulwark.db", &db) != c.SQLITE_OK) {
+        std.debug.print("Error: Failed to open DB\n", .{});
+        return;
+    }
+    defer _ = c.sqlite3_close(db);
+
+    // Init mongoose lib
+    var mgr: c.mg_mgr = undefined;
     c.mg_mgr_init(&mgr);
     defer c.mg_mgr_free(&mgr);
 
-    _ = c.mg_http_listen(&mgr, "http://0.0.0.0:8000", ev_handler, null);
+    _ = c.mg_http_listen(&mgr, url, ev_handler, null) orelse {
+        std.debug.print("Failed to start listener on {s}\n", .{url});
+        return;
+    };
 
     while (true) {
         c.mg_mgr_poll(&mgr, 1000);
