@@ -10,22 +10,22 @@
   </head>
   <body>
     <div class="is-flex is-justify-content-center is-align-items-center" style="height: 100%; min-height: 100vh;">
-      
+
       <div class="column is-11-mobile is-6-tablet is-4-desktop is-3-widescreen">
-        
+
         <div class="has-text-centered mb-5">
           <img src="/assets/icon/logo.svg" alt="KyberKeep Black" class="image is-96x96 is-inline-block mb-3">
           <h1 class="title is-3 has-text-white">Create an Account</h1>
         </div>
 
-        <form>
+        <form hx-post="/register">
           <div class="field">
             <p class="control has-icons-left">
               <input type="text" placeholder="Username" class="input">
               <span class="icon is-small is-left">
                 <i class="fas fa-user"></i>
               </span>
-            </p> 
+            </p>
           </div>
 
           <div class="field">
@@ -34,7 +34,7 @@
               <span class="icon is-small is-left">
                 <i class="fas fa-envelope"></i>
               </span>
-            </p> 
+            </p>
           </div>
 
           <div class="field">
@@ -43,7 +43,7 @@
               <span class="icon is-small is-left">
                 <i class="fas fa-lock"></i>
               </span>
-            </p> 
+            </p>
           </div>
 
           <div class="field">
@@ -52,7 +52,7 @@
               <span class="icon is-small is-left">
                 <i class="fas fa-lock"></i>
               </span>
-            </p> 
+            </p>
           </div>
 
           <div class="field mt-5">
@@ -60,13 +60,13 @@
               <button class="button is-success is-fullwidth" type="submit">
                 <strong>Register</strong>
               </button>
-            </p> 
+            </p>
           </div>
         </form>
 
         <div class="has-text-centered mt-4">
           <p class="has-text-grey-light">
-            Already have an account? 
+            Already have an account?
             <a href="/login" class="has-text-link">Log In</a>
           </p>
         </div>

@@ -1,0 +1,3 @@
+[submodule "external/cmem.h"]
+	path = external/cmem.h
+	url = git@github.com:Pap0m/cmem.h.git
