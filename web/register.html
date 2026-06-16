@@ -1,77 +1,92 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="theme-dark">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Register</title>
-    <link rel="stylesheet" href="/thirdparty/bulma.min.css">
-    <link rel="stylesheet" href="/thirdparty/all.min.css">
-    <script src="/thirdparty/htmx.min.js"></script>
-  </head>
-  <body>
-    <div class="is-flex is-justify-content-center is-align-items-center" style="height: 100%; min-height: 100vh;">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Register</title>
+        <link rel="stylesheet" href="/thirdparty/bulma.min.css" />
+        <link rel="stylesheet" href="/thirdparty/all.min.css" />
+        <script src="/thirdparty/htmx.min.js"></script>
+    </head>
+    <body>
+        <div
+            class="is-flex is-justify-content-center is-align-items-center"
+            style="height: 100%; min-height: 100vh"
+        >
+            <div
+                class="column is-11-mobile is-6-tablet is-4-desktop is-3-widescreen"
+            >
+                <div class="has-text-centered mb-5">
+                    <img
+                        src="/assets/icon/logo.svg"
+                        alt="KyberKeep Black"
+                        class="image is-96x96 is-inline-block mb-3"
+                    />
+                    <h1 class="title is-3 has-text-white">Create an Account</h1>
+                </div>
 
-      <div class="column is-11-mobile is-6-tablet is-4-desktop is-3-widescreen">
+                <form hx-post="/register">
+                    <div class="field">
+                        <p class="control has-icons-left">
+                            <input
+                                type="text"
+                                name="username"
+                                placeholder="Username"
+                                class="input"
+                            />
+                            <span class="icon is-small is-left">
+                                <i class="fas fa-user"></i>
+                            </span>
+                        </p>
+                    </div>
 
-        <div class="has-text-centered mb-5">
-          <img src="/assets/icon/logo.svg" alt="KyberKeep Black" class="image is-96x96 is-inline-block mb-3">
-          <h1 class="title is-3 has-text-white">Create an Account</h1>
+                    <div class="field">
+                        <p class="control has-icons-left">
+                            <input
+                                type="password"
+                                name="password"
+                                placeholder="Password"
+                                class="input"
+                            />
+                            <span class="icon is-small is-left">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                        </p>
+                    </div>
+
+                    <div class="field">
+                        <p class="control has-icons-left">
+                            <input
+                                type="password"
+                                name="confirm_password"
+                                placeholder="Confirm Password"
+                                class="input"
+                            />
+                            <span class="icon is-small is-left">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                        </p>
+                    </div>
+
+                    <div class="field mt-5">
+                        <p class="control">
+                            <button
+                                class="button is-success is-fullwidth"
+                                type="submit"
+                            >
+                                <strong>Register</strong>
+                            </button>
+                        </p>
+                    </div>
+                </form>
+
+                <div class="has-text-centered mt-4">
+                    <p class="has-text-grey-light">
+                        Already have an account?
+                        <a href="/login" class="has-text-link">Log In</a>
+                    </p>
+                </div>
+            </div>
         </div>
-
-        <form hx-post="/register">
-          <div class="field">
-            <p class="control has-icons-left">
-              <input type="text" placeholder="Username" class="input">
-              <span class="icon is-small is-left">
-                <i class="fas fa-user"></i>
-              </span>
-            </p>
-          </div>
-
-          <div class="field">
-            <p class="control has-icons-left">
-              <input type="email" placeholder="Email Address" class="input">
-              <span class="icon is-small is-left">
-                <i class="fas fa-envelope"></i>
-              </span>
-            </p>
-          </div>
-
-          <div class="field">
-            <p class="control has-icons-left">
-              <input type="password" placeholder="Password" class="input">
-              <span class="icon is-small is-left">
-                <i class="fas fa-lock"></i>
-              </span>
-            </p>
-          </div>
-
-          <div class="field">
-            <p class="control has-icons-left">
-              <input type="password" placeholder="Confirm Password" class="input">
-              <span class="icon is-small is-left">
-                <i class="fas fa-lock"></i>
-              </span>
-            </p>
-          </div>
-
-          <div class="field mt-5">
-            <p class="control">
-              <button class="button is-success is-fullwidth" type="submit">
-                <strong>Register</strong>
-              </button>
-            </p>
-          </div>
-        </form>
-
-        <div class="has-text-centered mt-4">
-          <p class="has-text-grey-light">
-            Already have an account?
-            <a href="/login" class="has-text-link">Log In</a>
-          </p>
-        </div>
-
-      </div>
-    </div>
-  </body>
+    </body>
 </html>
