@@ -15,7 +15,15 @@ typedef enum {
     ERR_LOCK_DB = -15,
     ERR_VIOLATE_CONSTRAINT = -16,
 
+    // User Errors
     ERR_USER_NOT_FOUND = -30,
+
+    // Entropy / Randomness Errors
+    ERR_BLOCK_ENTROPY = -40,        // getrandom (EAGAIN)
+    ERR_READ_ENTROPY = -41,         // Insufficient bytes are read (bytes < 256)
+
+    // General Errors
+    ERR_SMALL_BUF = -50,
 
    // Mongoose Errors
 } Error;

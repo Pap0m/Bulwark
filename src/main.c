@@ -1,10 +1,12 @@
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <sqlite3.h>
 #include <mongoose.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/random.h>
 
 #include "db.h"
 #include "error.h"
@@ -15,6 +17,24 @@ typedef struct {
     sqlite3 *db;
 } App_Context;
 
+int gen_cookie(char *buf, size_t size) {
+    unsigned char random_bytes[32] = {0};
+    ssize_t ssize = getrandom(random_bytes, sizeof(random_bytes), GRND_NONBLOCK);
+    if (ssize < 0) {
+        if (ssize == EAGAIN) {
+            return ERR_BLOCK_ENTROPY;
+        }
+        return ERR_READ_ENTROPY;
+    }
+
+    if (size < 45){
+        return ERR_SMALL_BUF;
+    }
+
+    mg_base64_encode(random_bytes, sizeof(random_bytes), buf, size);
+
+    return SUCCESS;
+}
 
 static void ev_handler(struct mg_connection *conn, int ev, void *ev_data) {
     if (ev == MG_EV_HTTP_MSG) { // new http request received
@@ -92,19 +112,33 @@ static void ev_handler(struct mg_connection *conn, int ev, void *ev_data) {
 
                 if (valid_user(db, username.buf, password.buf) != SUCCESS) {
                     mg_http_reply(conn, 400, "Content-Type: text/html\r\n", "<div>Login Unsuccessful!</div>");
+                    return;
                 }
 
-                // TODO: gen cookie
+                char cookie[256] = {0};
+                if (gen_cookie(cookie, 256) < 0) {
+                    mg_http_reply(conn, 400, "Content-Type: text/html\r\n", "<div>Cookie Failed to gen</div>");
+                    return;
+                }
+                printf("Cookie: %s\n", cookie);
 
-                char headers[256];
+                char headers[512];
                 snprintf(headers, sizeof(headers),
                          "Content-Type: text/html; charset=utf-8\r\n"
+                         "Location: /dashboard\r\n"
                          "Set-Cookie: %s=%s; Path=/; HttpOnly; SameSite=Strict\r\n",
-                         "access_token", "12345678");
+                         "access_token", cookie);
 
-                mg_http_reply(conn, 200, headers, "<div>Login Successful!</div>");
+                mg_http_reply(conn, 303, headers, "");
+
+
+                // TODO: gen a sqlite3 db in memory for the mapping connection
+                // TODO: map the cookie with the User session
+
+                return;
             } else {
                 mg_http_reply(conn, 400, "Content-Type: text/html\r\n", "<div>Login Unsuccessful!</div>");
+                return;
             }
 
             return;
