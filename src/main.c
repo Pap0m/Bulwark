@@ -13,9 +13,55 @@
 
 static const char url[] = "http://0.0.0.0:8000";
 
+int handle_routes() {
+
+}
+
 typedef struct {
     sqlite3 *db;
-} App_Context;
+} Context;
+
+typedef void (*route_handler_t)(struct mg_connection *c, struct mg_http_message *hm, Context ctx);
+
+typedef struct {
+    const char *method;
+    const char *uri;
+    route_handler_t handler;
+} Route;
+
+void handle_static(struct mg_connection *c, struct mg_http_message *hm, Context ctx) {
+    struct mg_http_serve_opts opts = { .root_dir = "web/public", .fs = &mg_fs_posix };
+    mg_http_serve_dir(c, hm, &opts);
+}
+
+void handle_home_get(struct mg_connection *c, struct mg_http_message *hm, Context ctx) {
+    mg_http_serve_file(c, hm, "web/index.html", NULL);
+}
+
+void handle_login_get(struct mg_connection *c, struct mg_http_message *hm, Context ctx) {
+    mg_http_serve_file(c, hm, "web/login.html", NULL);
+}
+
+void handle_login_post(struct mg_connection *c, struct mg_http_message *hm, Context ctx) {
+    printf("Handling login post\n");
+    mg_http_reply(c, 200, "Content-Type: text/html\r\n", "<div>Login Processed</div>");
+}
+// The routing table.
+// We use a sentinel value {NULL, NULL, NULL} at the end to know when to stop looping.
+static const Route routes[] = {
+    {"GET",  "/assets/#",     handle_static},
+    {"GET",  "/thirdparty/#", handle_static},
+    {"GET",  "/",             handle_home_get},
+    {"GET",  "/login",        handle_login_get},
+    {"POST", "/login",        handle_login_post},
+    // {"POST", "/register",     handle_register_post},
+    // {"GET",  "/items/:id", handle_get_item}, // TODO: Future implementation
+    {NULL, NULL, NULL}
+};
+
+void dispatch_router(struct mg_connection *c, struct mg_http_message *hm, Context ctx) {
+
+}
 
 int gen_cookie(char *buf, size_t size) {
     unsigned char random_bytes[32] = {0};
@@ -39,168 +85,14 @@ int gen_cookie(char *buf, size_t size) {
 static void ev_handler(struct mg_connection *conn, int ev, void *ev_data) {
     if (ev == MG_EV_HTTP_MSG) { // new http request received
         struct mg_http_message *hm = (struct mg_http_message *)ev_data;
-        App_Context *ctx = (App_Context *) conn->mgr->userdata;
+        Context *ctx = (Context *) conn->mgr->userdata;
         if (ctx == NULL || ctx->db == NULL) {
             fprintf(stderr, "Ctx DB lost\n");
+            mg_http_reply(conn, 500, "", "Internal Server Error\n");
             return;
         }
-        sqlite3 *db = ctx->db;
-
-        // if (c.mg_match(hm.uri, c.mg_str("/#"), null)) {
-        //     const opts: c.mg_http_serve_opts = .{ .root_dir = "./web/public", .fs = &c.mg_fs_posix };
-        //     c.mg_http_serve_dir(conn, hm, &opts);
-        // } else {
-        //     c.mg_http_reply(conn, 404, "", "%s", "Not Found\n");
-        // }
-        // // routes that needs authentication
-        // if (c.mg_match(hm.uri, c.mg_str("/api/#"), null)) {
-        //     const auth_header = c.mg_http_get_header(hm, "Authorization") orelse {
-        //         c.mg_http_reply(conn, 401, "Content-Type: application/json\r\n", "{\"error\": \"Unauthorized\"}\n");
-        //         return;
-        //     };
-        //
-        //     _ = auth_header;
-        // }
-
-        // static assets
-        if (mg_match(hm->uri, mg_str("/assets/#"), NULL) || mg_match(hm->uri, mg_str("/thirdparty/#"), NULL)) {
-            struct mg_http_serve_opts opts = { .root_dir = "web/public", .fs = &mg_fs_posix };
-            mg_http_serve_dir(conn, hm, &opts);
-            return;
-        }
-
-        // map routes to html files
-        // home
-        if (mg_match(hm->method, mg_str("GET"), NULL) && mg_match(hm->uri, mg_str("/"), NULL)) {
-            mg_http_serve_file(conn, hm, "web/index.html", NULL);
-            return;
-        }
-        // login
-        if (mg_match(hm->method, mg_str("GET"), NULL) && mg_match(hm->uri, mg_str("/login"), NULL)) {
-            mg_http_serve_file(conn, hm, "web/login.html", NULL);
-            return;
-        }
-        // register
-        if (mg_match(hm->method, mg_str("GET"), NULL) && mg_match(hm->uri, mg_str("/register"), NULL)) {
-            mg_http_serve_file(conn, hm, "web/register.html", NULL);
-            return;
-        }
-        // dashboard
-        if (mg_match(hm->method, mg_str("GET"), NULL) && mg_match(hm->uri, mg_str("/dashboard"), NULL)) {
-            mg_http_serve_file(conn, hm, "web/dashboard.html", NULL);
-            return;
-        }
-
-
-        // actions and htmx routing
-        // handle login
-        if (mg_match(hm->method, mg_str("POST"), NULL) && mg_match(hm->uri, mg_str("/login"), NULL)) {
-            printf("Body: %s\n", hm->body.buf);
-
-            char user_buf[50] = "";
-            char pass_buf[50] = "";
-
-            const int user_len = mg_http_get_var(&hm->body, "username", user_buf, sizeof(user_buf));
-            const int pass_len = mg_http_get_var(&hm->body, "password", pass_buf, sizeof(pass_buf));
-
-            if (user_len > 0 || pass_len > 0) {
-                struct mg_str username = mg_str_n(user_buf, user_len);
-                struct mg_str password = mg_str_n(pass_buf, pass_len);
-
-                int ret = valid_user(db, username.buf, password.buf);
-                printf("Ret: %d\n", ret);
-
-                if (valid_user(db, username.buf, password.buf) != SUCCESS) {
-                    mg_http_reply(conn, 400, "Content-Type: text/html\r\n", "<div>Login Unsuccessful!</div>");
-                    return;
-                }
-
-                char cookie[256] = {0};
-                if (gen_cookie(cookie, 256) < 0) {
-                    mg_http_reply(conn, 400, "Content-Type: text/html\r\n", "<div>Cookie Failed to gen</div>");
-                    return;
-                }
-                printf("Cookie: %s\n", cookie);
-
-                char headers[512];
-                snprintf(headers, sizeof(headers),
-                         "Content-Type: text/html; charset=utf-8\r\n"
-                         "Location: /dashboard\r\n"
-                         "Set-Cookie: %s=%s; Path=/; HttpOnly; SameSite=Strict\r\n",
-                         "access_token", cookie);
-
-                mg_http_reply(conn, 303, headers, "");
-
-
-                // TODO: gen a sqlite3 db in memory for the mapping connection
-                // TODO: map the cookie with the User session
-
-                return;
-            } else {
-                mg_http_reply(conn, 400, "Content-Type: text/html\r\n", "<div>Login Unsuccessful!</div>");
-                return;
-            }
-
-            return;
-        }
-        // handle register
-        if (mg_match(hm->method, mg_str("POST"), NULL) && mg_match(hm->uri, mg_str("/register"), NULL)) {
-            printf("Body: %s\n", hm->body.buf);
-            char user_buf[50] = "";
-            char pass_buf[50] = "";
-            char conf_pass_buf[50] = "";
-
-            const int user_len = mg_http_get_var(&hm->body, "username", user_buf, sizeof(user_buf));
-            const int pass_len = mg_http_get_var(&hm->body, "password", pass_buf, sizeof(pass_buf));
-            const int conf_pass_len = mg_http_get_var(&hm->body, "confirm_password", conf_pass_buf, sizeof(conf_pass_buf));
-
-            if (user_len > 0 && pass_len > 0 && conf_pass_len > 0) {
-                struct mg_str username = mg_str_n(user_buf, user_len);
-                struct mg_str password = mg_str_n(pass_buf, pass_len);
-                struct mg_str confirm_password = mg_str_n(conf_pass_buf, conf_pass_len);
-
-                if (mg_strcmp(password, confirm_password) != 0) {
-                    mg_http_reply(conn, 400, "Content-Type: text/html\r\n", "<div>Login Unsuccessful!</div>");
-                }
-
-                insert_user(db, username.buf, password.buf);
-
-                mg_http_reply(conn, 200, "Content-Type: text/html\r\n", "<div>Login Successful!</div>");
-            } else {
-                mg_http_reply(conn, 400, "Content-Type: text/html\r\n", "<div>Login Unsuccessful!</div>");
-            }
-            return;
-        }
-        // handle fetching vault items
-        if (mg_match(hm->method, mg_str("GET"), NULL) && mg_match(hm->uri, mg_str("/items"), NULL)) {
-            return;
-        }
-        // handle new vault item form
-        if (mg_match(hm->method, mg_str("GET"), NULL) && mg_match(hm->uri, mg_str("/items/new"), NULL)) {
-            return;
-        }
-        // handle adding a new valut item
-        if (mg_match(hm->method, mg_str("POST"), NULL) && mg_match(hm->uri, mg_str("/items"), NULL)) {
-            return;
-        }
-
-        // show independent items
-        // GET /items/:id
-        // GET /items/:id/edit
-        // PUT /items/:id
-        // DELETE /items/:id
-
-        // session managment
-        // POST logout
-        if (mg_match(hm->method, mg_str("POST"), NULL) && mg_match(hm->uri, mg_str("/logout"), NULL)) {
-            return;
-        }
-
-        // fallback
-        // if no routes, send a 404
-        mg_http_reply(conn, 404, "", "404 Not Found\n");
+        dispatch_router(conn, hm, *ctx);
     }
-
 }
 
 
@@ -213,8 +105,8 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
-    // init App_Context
-    App_Context ctx = {0};
+    // init Context
+    Context ctx = {0};
     ctx.db = db;
 
     // create sql tables
