@@ -1,6 +1,6 @@
-project('Bulwark', 'c',
+project('Bulwark', ['c', 'cpp'],
     version: '0.1',
-    default_options: ['warning_level=3']
+    default_options: ['warning_level=3', 'cpp_std=c++23']
 )
 
 sqlite3_dep = dependency('sqlite3', fallback: ['sqlite3', 'sqlite3_dep'], required: true)
