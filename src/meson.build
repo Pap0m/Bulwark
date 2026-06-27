@@ -1,8 +1,7 @@
 src_files = files(
-    # 'test.c',
-    # 'main.c',
-    # 'db.c'
-    'app.cpp'
+    'App.cpp',
+    'Context.cpp',
+    'main.cpp'
 )
 
 executable('Bulwark',
