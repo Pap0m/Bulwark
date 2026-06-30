@@ -1,7 +1,9 @@
 src_files = files(
-    'App.cpp',
-    'Context.cpp',
-    'main.cpp'
+    # 'App.cpp',
+    # 'Context.cpp',
+    # 'main.cpp'
+    'bulwark.c',
+    'some.c'
 )
 
 executable('Bulwark',
